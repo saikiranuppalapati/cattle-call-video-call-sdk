@@ -1,0 +1,23 @@
+{
+  "name": "Cattle-Call-SDK",
+  "version": "1.0.0",
+  "description": "cattle call sdk",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "keywords": [
+    "video call",
+    "audio call",
+    "video confurence",
+    "group calling",
+    "group video calling"
+  ],
+  "author": "Tvisha Technlogies Pvt Ltd <sai@tvisha.in>",
+  "license": "ISC",
+  "dependencies": {
+    "socket.io-client": "^2.3.0",
+    "trim": "0.0.1",
+    "webrtc-adapter": "^7.7.0"
+  }
+}
