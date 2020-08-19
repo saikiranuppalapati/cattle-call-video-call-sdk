@@ -40,7 +40,6 @@ class CattleCall {
          
         });
         this.listenSockets();
-        getServers();
         __this=this;
         videoLoginUserId=user_id;
     }
@@ -470,7 +469,7 @@ function logError(error) {
 function getServers(){
     let data={};
     socket.emit('configuration',data,function(data){
-        configurationConferenceVideocall=data;
+        configurationVideocall=data;
     })
 }
 function setCallEndTimer(time){
