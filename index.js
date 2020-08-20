@@ -26,6 +26,7 @@ let __this;
 let audioSource = "default";
 let videoSource = "default";
 let configurationVideocall = {};
+let doNegotication=true;
 class CattleCall {
     constructor(user_id,clientId, clientSecret) {
         this.clientId = clientId;
@@ -142,9 +143,6 @@ class CattleCall {
     reject(){
         socket.emit("reject_video_call",{ user_id : videoLoginUserId,share_user_id : videoCallUserId,call_id:callId});
     }
-    // onCallEnd(data){
-    //     stopVideoCalling();  
-    // }
 
    /** getDevices is used to get audio / video devices **/
 
@@ -175,7 +173,6 @@ class CattleCall {
             configurationVideocall=data;
         });
         socket.on("video_signal",function(data){
-            console.log(data,"video_signal")
             if(localVideoSelector==null) return false;
             switch(data.type) {
                 case "offer":
@@ -263,11 +260,35 @@ function initWebRtc(userId,shareUserId,isStream,isCaller){
             socket.emit('video_signal',{"type":"candidate", "candidate": evt.candidate,"user_id" : videoLoginUserId,"share_user_id" : videoCallUserId,room:ROOM});
         }
     };
-    if(isCaller){
-        rtcPeerConn.onnegotiationneeded = function () {
-            rtcPeerConn.createOffer(sendLocalDesc, logError);
-        };
+    //if(typeof doNegotication === "undefined") doNegotication = true;
+    if(rtcPeerConn.signalingState !== "stable"){
+        return;
     }
+    if(rtcPeerConn._negotiating === true){
+        return;
+    }else{
+        rtcPeerConn._negotiating = true;
+    }
+    if(!doNegotication){
+        doNegotication = true;
+        return;
+    }
+    
+     rtcPeerConn.onnegotiationneeded = function () {
+            rtcPeerConn.createOffer().then((desc)=>{
+                rtcPeerConn.setLocalDescription(desc).then(()=> {
+                    socket.emit('video_signal',{"type":"offer", 'offer': rtcPeerConn.localDescription, user_id : videoLoginUserId,'share_user_id' : videoCallUserId,room:ROOM});
+                    rtcPeerConn._negotiating = false;
+                }).catch(error=>{
+                    console.log("setLocalDescription error",error);
+                    rtcPeerConn._negotiating = false;
+                });
+            }).catch(e=>{
+                console.log("offer error",error);
+                rtcPeerConn._negotiating = false;
+            });
+    };
+    
     rtcPeerConn.onopen = function () {
         console.log("Connected");
     };
@@ -310,14 +331,16 @@ function initWebRtc(userId,shareUserId,isStream,isCaller){
 
 function onOffer(offer) {
     if(!rtcPeerConn){
-        initWebRtc(videoLoginUserId,videoCallUserId,true,true);
+        doNegotication=false;
+        initWebRtc(videoLoginUserId,videoCallUserId,true,false);
     }
     offer.sdp = offer.sdp;
     rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(() => {
-        rtcPeerConn.createAnswer().then(answer=>{
+        rtcPeerConn.createAnswer().then(function(answer){
             rtcPeerConn.setLocalDescription(answer);
-        }).then(()=>{
             socket.emit('video_signal',{"type":"answer", answer: answer, "user_id" : videoLoginUserId,"share_user_id" : videoCallUserId,room:ROOM});
+        }).catch(error=>{
+            console.log(error,"error while creating answer");
         })
     }).catch(err=>{
         console.log(err,"error seting remote description");
@@ -327,13 +350,11 @@ function onOffer(offer) {
 /** onAnswer method is used to set remote answer **/
 
 function onAnswer(answer) {
-   // console.log("answered")
-    if(rtcPeerConn.signalingState === "have-local-offer"){
-        rtcPeerConn.setRemoteDescription(new RTCSessionDescription(answer));
-        
-    }else{
-        initWebRtc(videoLoginUserId,videoCallUserId,true,false);
+   if(!rtcPeerConn){
+    doNegotication=true;
+    initWebRtc(videoLoginUserId,videoCallUserId,true,false);
     }
+    rtcPeerConn.setRemoteDescription(new RTCSessionDescription(answer));
 
 }
 
@@ -405,9 +426,10 @@ function addStream(){
         if(localVideoSelector){
             localVideoSelector.srcObject =localVideoStream;
         }
+        return true;
       }).catch(err=>{
         alert("Camera device is not readable");
-       // console.log("media err",err);
+        return false;
       });
 }
 
@@ -418,7 +440,15 @@ function reconnectVideoCall(){
         if(rtcPeerConn.iceConnectionState == "disconnected" || rtcPeerConn.iceConnectionState == "failed"){
             if(!isIncomingCall) {
                 /*initWebRtc(videoLoginUserId, videoCallUserId, true, true, false);*/
-                rtcPeerConn.createOffer({"iceRestart": true}).then(sendLocalDesc).catch(logError);
+                rtcPeerConn.createOffer({"iceRestart": true}).then((desc)=>{
+                    rtcPeerConn.setLocalDescription(desc).then(()=> {
+                        socket.emit('video_signal',{"type":"offer", 'offer': rtcPeerConn.localDescription, user_id : videoLoginUserId,'share_user_id' : videoCallUserId,room:ROOM});
+                    }).catch(error=>{
+                        console.log("setLocalDescription error",error)
+                    });
+                }).catch(err=>{
+                    console.log("offer error",err)
+                });
             }
         }
     }
@@ -426,12 +456,7 @@ function reconnectVideoCall(){
 
 /** sendLocalDesc method is used to send local offer to remote peer connection **/
 
-function sendLocalDesc(desc) {
-    desc.sdp = desc.sdp;
-    rtcPeerConn.setLocalDescription(desc, function () {
-        socket.emit('video_signal',{"type":"offer", 'offer': rtcPeerConn.localDescription, user_id : videoLoginUserId,'share_user_id' : videoCallUserId,room:ROOM});
-    }, logError);
-}
+
 function setReconnectingTimer(set){
     if(set){
         if(reconnectingTimer !== null){
@@ -449,7 +474,15 @@ function setReconnectingTimer(set){
         reconnectingInterval = setInterval(function(){
             if(rtcPeerConn.iceConnectionState == "disconnected" || rtcPeerConn.iceConnectionState == "failed") {
                 if(!isIncomingCall) {
-                    rtcPeerConn.createOffer({"iceRestart": true}).then(sendLocalDesc).catch(videoCallLogError);
+                    rtcPeerConn.createOffer({"iceRestart": true}).then((desc)=>{
+                        rtcPeerConn.setLocalDescription(desc).then(()=> {
+                            socket.emit('video_signal',{"type":"offer", 'offer': rtcPeerConn.localDescription, user_id : videoLoginUserId,'share_user_id' : videoCallUserId,room:ROOM});
+                        }).catch(error=>{
+                            console.log("setLocalDescription error",error)
+                        });
+                    }).catch(err=>{
+                        console.log("offer error",err)
+                    });
                 }
             }
         },10000);
