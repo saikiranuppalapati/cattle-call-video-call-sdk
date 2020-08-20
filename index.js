@@ -170,7 +170,7 @@ class CattleCall {
         getServers();
         socket.on("configuration",function(data){
             configurationVideocall=data;
-            this.onReady();
+            __this.onReady();
         });
         socket.on("video_signal",function(data){
             if(localVideoSelector==null) return false;
@@ -507,6 +507,7 @@ function getServers(){
     let data={};
     socket.emit('configuration',data,function(data){
         configurationVideocall=data;
+        this.onReady();
     })
 }
 function setCallEndTimer(time){

@@ -1,6 +1,6 @@
 {
   "name": "Cattle-Call-SDK",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "cattle call sdk",
   "main": "index.js",
   "scripts": {
