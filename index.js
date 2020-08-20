@@ -331,8 +331,8 @@ function initWebRtc(userId,shareUserId,isStream,isCaller){
 
 function onOffer(offer) {
     if(!rtcPeerConn){
-        doNegotication=false;
         initWebRtc(videoLoginUserId,videoCallUserId,true,false);
+        doNegotication=false;
     }
     offer.sdp = offer.sdp;
     rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(() => {
@@ -351,8 +351,8 @@ function onOffer(offer) {
 
 function onAnswer(answer) {
    if(!rtcPeerConn){
-    doNegotication=true;
     initWebRtc(videoLoginUserId,videoCallUserId,true,false);
+    doNegotication=true;
     }
     rtcPeerConn.setRemoteDescription(new RTCSessionDescription(answer));
 
