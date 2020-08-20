@@ -313,24 +313,28 @@ function onOffer(offer) {
         initWebRtc(videoLoginUserId,videoCallUserId,true,true);
     }
     offer.sdp = offer.sdp;
-    rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer),function(){
-        rtcPeerConn.createAnswer(function (answer) {
+    rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(() => {
+        rtcPeerConn.createAnswer().then(answer=>{
             rtcPeerConn.setLocalDescription(answer);
+        }).then(()=>{
             socket.emit('video_signal',{"type":"answer", answer: answer, "user_id" : videoLoginUserId,"share_user_id" : videoCallUserId,room:ROOM});
-        }, function (error) {
-            /*alert("oops...error");*/
-        });
-    });
+        })
+    }).catch(err=>{
+        console.log(err,"error seting remote description");
+    })
 }
 
 /** onAnswer method is used to set remote answer **/
 
 function onAnswer(answer) {
    // console.log("answered")
-    if(!rtcPeerConn){
+    if(rtcPeerConn.signalingState === "have-local-offer"){
+        rtcPeerConn.setRemoteDescription(new RTCSessionDescription(answer));
+        
+    }else{
         initWebRtc(videoLoginUserId,videoCallUserId,true,false);
     }
-    rtcPeerConn.setRemoteDescription(new RTCSessionDescription(answer));
+
 }
 
 /** onCandidate method is used to set candidates to peer connection **/
