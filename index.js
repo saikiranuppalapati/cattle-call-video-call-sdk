@@ -507,7 +507,7 @@ function getServers(){
     let data={};
     socket.emit('configuration',data,function(data){
         configurationVideocall=data;
-        this.onReady();
+        __this.onReady();
     })
 }
 function setCallEndTimer(time){
