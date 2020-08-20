@@ -37,8 +37,7 @@ class CattleCall {
         this.incommingcall;
         socket=socketClient.connect(SOKET_SERVER_URL, {query: "client_id="+this.clientId+"&clientSecret="+this.clientSecret+"&user_id="+user_id+"&platform=1"});
         socket.on('connect',()=>{
-           this.onReady();
-         
+           
         });
         this.listenSockets();
         __this=this;
@@ -171,6 +170,7 @@ class CattleCall {
         getServers();
         socket.on("configuration",function(data){
             configurationVideocall=data;
+            this.onReady();
         });
         socket.on("video_signal",function(data){
             if(localVideoSelector==null) return false;
