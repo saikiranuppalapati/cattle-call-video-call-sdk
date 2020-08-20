@@ -37,9 +37,8 @@ class CattleCall {
         this.incommingcall;
         socket=socketClient.connect(SOKET_SERVER_URL, {query: "client_id="+this.clientId+"&clientSecret="+this.clientSecret+"&user_id="+user_id+"&platform=1"});
         socket.on('connect',()=>{
-           
+            this.listenSockets();
         });
-        this.listenSockets();
         __this=this;
         videoLoginUserId=user_id;
     }
@@ -167,7 +166,7 @@ class CattleCall {
             });
         }
     listenSockets(){
-        getServers();
+        //getServers();
         socket.on("configuration",function(data){
             configurationVideocall=data;
             __this.onReady();
