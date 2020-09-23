@@ -393,9 +393,9 @@ function initRemoteWebRtc(userId,shareUserId,isStream,isCaller){
 }
 /** onOffer method is used to set remote offer and set local answer and send answer to another peer connection **/
 
-function onOffer(offer) {
+async function onOffer(offer) {
     if(!rtcPeerConn){
-        initRemoteWebRtc(videoLoginUserId,videoCallUserId,true,false);
+        await initRemoteWebRtc(videoLoginUserId,videoCallUserId,true,false);
         doNegotication=false;
     }
     if(rtcPeerConn.signalingState!=="stable"){
