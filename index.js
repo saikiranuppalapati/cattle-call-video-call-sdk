@@ -266,15 +266,6 @@ function initWebRtc(userId,shareUserId,isStream,isCaller){
             console.log(rtcPeerConn.signalingState,"signal--2");
             return;
         }
-        if(rtcPeerConn._negotiating === true){
-            return;
-        }else{
-            rtcPeerConn._negotiating = true;
-        }
-        if(!doNegotication){
-            doNegotication = true;
-            return;
-        }
          rtcPeerConn.createOffer().then((desc)=>{
                 console.log(rtcPeerConn.signalingState,"rtcPeerConn.signalingState")
                 if(rtcPeerConn.signalingState != "stable"){
@@ -339,6 +330,7 @@ async function onOffer(offer) {
         await initWebRtc(videoLoginUserId,videoCallUserId,true,false);
         doNegotication=false;
     }
+    console.log(rtcPeerConn.signalingState,"rtcPeerConn.signalingState offere");
     if(rtcPeerConn.signalingState!=="stable"){
         await rtcPeerConn.setLocalDescription({type: "rollback",spd:""})
     }
