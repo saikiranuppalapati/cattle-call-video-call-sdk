@@ -326,15 +326,80 @@ function initWebRtc(userId,shareUserId,isStream,isCaller){
         addStream();
     }
 }
+function initRemoteWebRtc(userId,shareUserId,isStream,isCaller){
+    if(remoteVideoSelector==null)return false;
+    rtcPeerConn = new RTCPeerConnection(configurationVideocall);
+    rtcPeerConn.onicecandidate = function (evt) {
+        if (evt.candidate){
+            socket.emit('video_signal',{"type":"candidate", "candidate": evt.candidate,"user_id" : videoLoginUserId,"share_user_id" : videoCallUserId,room:ROOM});
+        }
+    };
+    //if(typeof doNegotication === "undefined") doNegotication = true;
+    if(rtcPeerConn.signalingState !== "stable"){
+        return;
+    }
+    if(rtcPeerConn._negotiating === true){
+        return;
+    }else{
+        rtcPeerConn._negotiating = true;
+    }
+    if(!doNegotication){
+        doNegotication = true;
+        return;
+    }
+     rtcPeerConn.onnegotiationneeded = function () {
+            rtcPeerConn.createOffer().then((desc)=>{
+                rtcPeerConn.setLocalDescription(desc).then(()=> {
+                    socket.emit('video_signal',{"type":"offer", 'offer': rtcPeerConn.localDescription, user_id : videoLoginUserId,'share_user_id' : videoCallUserId,room:ROOM});
+                    rtcPeerConn._negotiating = false;
+                }).catch(error=>{
+                    console.log("setLocalDescription error",error);
+                    rtcPeerConn._negotiating = false;
+                });
+            }).catch(e=>{
+                console.log("offer error",error);
+                rtcPeerConn._negotiating = false;
+            });
+    };
+    rtcPeerConn.onopen = function () {
+        console.log("Connected");
+    };
+    rtcPeerConn.onerror = function (err) {
+        console.log("Got error", err);
+    };
+    rtcPeerConn.oniceconnectionstatechange = function() {
+        try{
+            if(rtcPeerConn.iceConnectionState == 'disconnected') { 
+            }else if(rtcPeerConn.iceConnectionState == 'failed'){
+                reconnectVideoCall();
+                setReconnectingTimer(true);
+            }else if(rtcPeerConn.iceConnectionState == 'closed'){
+                stopVideoCalling(true);
+            }else if(rtcPeerConn.iceConnectionState == 'connected'){
+                setReconnectingTimer(false);
+            }
+        }catch (e){
+
+        }
+    };
+    rtcPeerConn.ontrack = function (evt) {
+        remoteVideoStream = evt.streams[0];
+        if(remoteVideoSelector){
+            remoteVideoSelector.srcObject =remoteVideoStream;
+        }else{
+            console.log("remote video element not found")
+        }
+    };
+}
 /** onOffer method is used to set remote offer and set local answer and send answer to another peer connection **/
 
 function onOffer(offer) {
     if(!rtcPeerConn){
-        initWebRtc(videoLoginUserId,videoCallUserId,true,false);
+        initRemoteWebRtc(videoLoginUserId,videoCallUserId,true,false);
         doNegotication=false;
     }
-    offer.sdp = offer.sdp;
     rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(() => {
+        addStream();
         rtcPeerConn.createAnswer().then(function(answer){
             rtcPeerConn.setLocalDescription(answer);
             socket.emit('video_signal',{"type":"answer", answer: answer, "user_id" : videoLoginUserId,"share_user_id" : videoCallUserId,room:ROOM});
