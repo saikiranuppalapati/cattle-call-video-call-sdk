@@ -398,6 +398,9 @@ function onOffer(offer) {
         initRemoteWebRtc(videoLoginUserId,videoCallUserId,true,false);
         doNegotication=false;
     }
+    if(rtcPeerConn.signalingState!=="stable"){
+        await rtcPeerConn.setLocalDescription({type: "rollback",spd:""})
+    }
     rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(() => {
         addStream();
         rtcPeerConn.createAnswer().then(function(answer){
@@ -427,6 +430,7 @@ function onAnswer(answer) {
 function onCandidate(candidate) {
     if(!rtcPeerConn){
         initWebRtc(videoLoginUserId,videoCallUserId,true,true);
+        return;
     }
     rtcPeerConn.addIceCandidate(new RTCIceCandidate(candidate),function(){
     },function(err){
@@ -503,8 +507,8 @@ function reconnectVideoCall(){
     if(videoCallUserId != 0 && SOCKET !== null){
         if(rtcPeerConn.iceConnectionState == "disconnected" || rtcPeerConn.iceConnectionState == "failed"){
             if(!isIncomingCall) {
-                /*initWebRtc(videoLoginUserId, videoCallUserId, true, true, false);*/
-                rtcPeerConn.createOffer({"iceRestart": true}).then((desc)=>{
+                const offerOptions = {offerToReceiveAudio: 1,offerToReceiveVideo: 1,iceRestart:true};
+                rtcPeerConn.createOffer(offerOptions).then((desc)=>{
                     rtcPeerConn.setLocalDescription(desc).then(()=> {
                         socket.emit('video_signal',{"type":"offer", 'offer': rtcPeerConn.localDescription, user_id : videoLoginUserId,'share_user_id' : videoCallUserId,room:ROOM});
                     }).catch(error=>{
@@ -538,7 +542,8 @@ function setReconnectingTimer(set){
         reconnectingInterval = setInterval(function(){
             if(rtcPeerConn.iceConnectionState == "disconnected" || rtcPeerConn.iceConnectionState == "failed") {
                 if(!isIncomingCall) {
-                    rtcPeerConn.createOffer({"iceRestart": true}).then((desc)=>{
+                    const offerOptions = {offerToReceiveAudio: 1,offerToReceiveVideo: 1,iceRestart:true};
+                rtcPeerConn.createOffer(offerOptions).then((desc)=>{
                         rtcPeerConn.setLocalDescription(desc).then(()=> {
                             socket.emit('video_signal',{"type":"offer", 'offer': rtcPeerConn.localDescription, user_id : videoLoginUserId,'share_user_id' : videoCallUserId,room:ROOM});
                         }).catch(error=>{
