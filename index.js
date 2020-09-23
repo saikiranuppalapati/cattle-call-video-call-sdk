@@ -260,8 +260,10 @@ function initWebRtc(userId,shareUserId,isStream,isCaller){
         }
     };
     //if(typeof doNegotication === "undefined") doNegotication = true;
+    console.log(rtcPeerConn.signalingState,"signal---");
      rtcPeerConn.onnegotiationneeded = async function () {
         if(rtcPeerConn.signalingState !== "stable"){
+            console.log(rtcPeerConn.signalingState,"signal--2");
             return;
         }
         if(rtcPeerConn._negotiating === true){
@@ -273,8 +275,10 @@ function initWebRtc(userId,shareUserId,isStream,isCaller){
             doNegotication = true;
             return;
         }
-            await rtcPeerConn.createOffer().then((desc)=>{
+         rtcPeerConn.createOffer().then((desc)=>{
+                console.log(rtcPeerConn.signalingState,"rtcPeerConn.signalingState")
                 if(rtcPeerConn.signalingState != "stable"){
+                    console.log(rtcPeerConn.signalingState,"signal---3");
                     rtcPeerConn._negotiating = false;
                     return;
                 }
@@ -360,7 +364,6 @@ function onAnswer(answer) {
     rtcPeerConn.setRemoteDescription(new RTCSessionDescription(answer));
 
 }
-
 /** onCandidate method is used to set candidates to peer connection **/
 
 function onCandidate(candidate) {
