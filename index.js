@@ -323,6 +323,7 @@ function initWebRtc(userId, shareUserId, isStream, isCaller) {
         }
     };
     rtcPeerConn.ontrack = function (evt) {
+        console.log("remote video recived");
         remoteVideoStream = evt.streams[0];
         if (remoteVideoSelector) {
             remoteVideoSelector.srcObject = remoteVideoStream;
@@ -369,6 +370,7 @@ async function onOffer(offer) {
 /** onAnswer method is used to set remote answer **/
 
 function onAnswer(answer) {
+    console.log("answer");
     if (!rtcPeerConn) {
         initWebRtc(videoLoginUserId, videoCallUserId, true, false);
         doNegotication = true;
