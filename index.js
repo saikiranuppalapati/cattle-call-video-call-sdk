@@ -338,8 +338,7 @@ async function onOffer(offer) {
         console.log("creating peerconnection");
         //doNegotication = false;
     }
-    const offerCollision = (makingOffer || rtcPeerConn.signalingState != "stable");
-    if (offerCollision) {
+    if (rtcPeerConn.signalingState != "stable") {
         await rtcPeerConn.setLocalDescription({ type: "rollback" });
         console.log(rtcPeerConn.signalingState, "offer collision");
     }
@@ -376,7 +375,7 @@ function onAnswer(answer) {
 
 function onCandidate(candidate) {
     if (!rtcPeerConn) {
-        initWebRtc(videoLoginUserId, videoCallUserId, true, true);
+        initWebRtc(videoLoginUserId, videoCallUserId, false, true);
         console.log("connection not there");
         return;
     }
