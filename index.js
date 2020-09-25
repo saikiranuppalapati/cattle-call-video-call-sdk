@@ -343,18 +343,34 @@ async function onOffer(offer) {
         console.log(rtcPeerConn.signalingState, "offer collision");
     }
     console.log(rtcPeerConn.signalingState, "rtcPeerConn.signalingState offere");
-    rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(async () => {
-        rtcPeerConn.createAnswer().then(function (answer) {
-            rtcPeerConn.setLocalDescription(answer).catch(error => {
-                console.log(error);
-            });
-            socket.emit('video_signal', { "type": "answer", answer: answer, "user_id": videoLoginUserId, "share_user_id": videoCallUserId, room: ROOM });
-        }).catch(error => {
-            console.log(error, "error while creating answer");
+    if (adapter.default.browserDetails.browser == "safari") {
+        rtcPeerConn.setRemoteDescription(offer).then(async () => {
+            rtcPeerConn.createAnswer().then(function (answer) {
+                rtcPeerConn.setLocalDescription(answer).catch(error => {
+                    console.log(error);
+                });
+                socket.emit('video_signal', { "type": "answer", answer: answer, "user_id": videoLoginUserId, "share_user_id": videoCallUserId, room: ROOM });
+            }).catch(error => {
+                console.log(error, "error while creating answer");
+            })
+        }).catch(err => {
+            console.log(err, "error seting remote description");
         })
-    }).catch(err => {
-        console.log(err, "error seting remote description");
-    })
+    } else {
+        rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(async () => {
+            rtcPeerConn.createAnswer().then(function (answer) {
+                rtcPeerConn.setLocalDescription(answer).catch(error => {
+                    console.log(error);
+                });
+                socket.emit('video_signal', { "type": "answer", answer: answer, "user_id": videoLoginUserId, "share_user_id": videoCallUserId, room: ROOM });
+            }).catch(error => {
+                console.log(error, "error while creating answer");
+            })
+        }).catch(err => {
+            console.log(err, "error seting remote description");
+        })
+    }
+
 }
 
 /** onAnswer method is used to set remote answer **/
@@ -377,12 +393,14 @@ function onCandidate(candidate) {
         console.log("connection not there");
         return;
     }
-    if (candidate) {
-        rtcPeerConn.addIceCandidate(new RTCIceCandidate(candidate)).catch(error => {
+    if (adapter.default.browserDetails.browser == "safari") {
+        rtcPeerConn.addIceCandidate(candidate).catch(error => {
             console.log(error, "addIceCandidate")
         });
     } else {
-        console.log(candidate, "invalid candidate");
+        rtcPeerConn.addIceCandidate(new RTCIceCandidate(candidate)).catch(error => {
+            console.log(error, "addIceCandidate")
+        });
     }
 }
 
