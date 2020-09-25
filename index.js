@@ -266,6 +266,7 @@ class CattleCall {
 }
 
 function initWebRtc(userId, shareUserId, isStream, isCaller) {
+    console.log(remoteVideoSelector, "remote element")
     if (remoteVideoSelector == null) return false;
     rtcPeerConn = new RTCPeerConnection(configurationVideocall);
     rtcPeerConn.onicecandidate = function (evt) {
@@ -332,19 +333,22 @@ function initWebRtc(userId, shareUserId, isStream, isCaller) {
     if (isStream) {
         addStream();
     }
+    return;
 }
 /** onOffer method is used to set remote offer and set local answer and send answer to another peer connection **/
 
 async function onOffer(offer) {
     if (!rtcPeerConn) {
-        await initWebRtc(videoLoginUserId, videoCallUserId, true, false);
-        doNegotication = false;
+        await initWebRtc(videoLoginUserId, videoCallUserId, false, false);
+        console.log("creating peerconnection");
+        //doNegotication = false;
     }
     console.log(rtcPeerConn.signalingState, "rtcPeerConn.signalingState offere");
     if (rtcPeerConn.signalingState !== "stable") {
         await rtcPeerConn.setLocalDescription({ type: "rollback", spd: "" })
     }
-    rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(() => {
+    rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(async () => {
+        await addStream();
         rtcPeerConn.createAnswer().then(function (answer) {
             rtcPeerConn.setLocalDescription(answer).catch(error => {
                 console.log(error);
@@ -448,9 +452,9 @@ function addStream() {
 /** reconnectVideoCall is used to reconnect call when call dropped due to network fluctuations **/
 
 function reconnectVideoCall() {
-    if (videoCallUserId != 0 && SOCKET !== null) {
+    if (videoCallUserId != 0 && socket !== null) {
         if (rtcPeerConn.iceConnectionState == "disconnected" || rtcPeerConn.iceConnectionState == "failed") {
-            if (!isIncomingCall) {
+            if (1) {
                 const offerOptions = { offerToReceiveAudio: 1, offerToReceiveVideo: 1, iceRestart: true };
                 rtcPeerConn.createOffer(offerOptions).then((desc) => {
                     rtcPeerConn.setLocalDescription(desc).then(() => {
