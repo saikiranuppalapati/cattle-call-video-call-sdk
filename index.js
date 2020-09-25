@@ -344,6 +344,7 @@ async function onOffer(offer) {
     }
     console.log(rtcPeerConn.signalingState, "rtcPeerConn.signalingState offere");
     if (adapter.default.browserDetails.browser == "safari") {
+        offer.sdp.replace("420029", "42e01f");
         rtcPeerConn.setRemoteDescription(offer).then(async () => {
             rtcPeerConn.createAnswer().then(function (answer) {
                 rtcPeerConn.setLocalDescription(answer).catch(error => {
