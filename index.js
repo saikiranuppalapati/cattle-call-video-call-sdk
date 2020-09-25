@@ -334,7 +334,7 @@ function initWebRtc(userId, shareUserId, isStream, isCaller) {
 
 async function onOffer(offer) {
     if (!rtcPeerConn) {
-        await initWebRtc(videoLoginUserId, videoCallUserId, false, false);
+        await initWebRtc(videoLoginUserId, videoCallUserId, true, false);
         console.log("creating peerconnection");
         //doNegotication = false;
     }
@@ -344,8 +344,6 @@ async function onOffer(offer) {
     }
     console.log(rtcPeerConn.signalingState, "rtcPeerConn.signalingState offere");
     rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(async () => {
-        await addStream();
-        console.log("adding stream");
         rtcPeerConn.createAnswer().then(function (answer) {
             rtcPeerConn.setLocalDescription(answer).catch(error => {
                 console.log(error);
@@ -375,7 +373,7 @@ function onAnswer(answer) {
 
 function onCandidate(candidate) {
     if (!rtcPeerConn) {
-        initWebRtc(videoLoginUserId, videoCallUserId, false, true);
+        initWebRtc(videoLoginUserId, videoCallUserId, true, true);
         console.log("connection not there");
         return;
     }
