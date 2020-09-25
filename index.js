@@ -338,7 +338,7 @@ async function onOffer(offer) {
         console.log("creating peerconnection");
         //doNegotication = false;
     }
-    const offerCollision = description.type == "offer" && (makingOffer || rtcPeerConn.signalingState != "stable");
+    const offerCollision = (makingOffer || rtcPeerConn.signalingState != "stable");
     if (offerCollision) {
         await rtcPeerConn.setLocalDescription({ type: "rollback" });
         console.log(rtcPeerConn.signalingState, "offer collision");
