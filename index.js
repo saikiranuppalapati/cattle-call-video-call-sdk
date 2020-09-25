@@ -343,6 +343,10 @@ async function onOffer(offer) {
         console.log("creating peerconnection");
         //doNegotication = false;
     }
+    if (isCaller) {
+        console.log("caller---- ");
+        return;
+    }
     console.log(rtcPeerConn.signalingState, "rtcPeerConn.signalingState offere");
     if (rtcPeerConn.signalingState !== "stable") {
         await rtcPeerConn.setLocalDescription({ type: "rollback", spd: "" })
@@ -369,7 +373,9 @@ function onAnswer(answer) {
         initWebRtc(videoLoginUserId, videoCallUserId, true, false);
         doNegotication = true;
     }
-    rtcPeerConn.setRemoteDescription(new RTCSessionDescription(answer));
+    rtcPeerConn.setRemoteDescription(new RTCSessionDescription(answer)).catch(error => {
+        console.log(error);
+    });
 }
 /** onCandidate method is used to set candidates to peer connection **/
 
