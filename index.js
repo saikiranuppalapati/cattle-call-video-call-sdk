@@ -143,7 +143,7 @@ class CattleCall {
     /** getDevices is used to get audio / video devices **/
 
     async getDevices() {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             await navigator.mediaDevices.getUserMedia({ audio: true })
                 .then(function () {
                     console.log("audio working");
