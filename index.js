@@ -26,6 +26,7 @@ let audioSource = "default";
 let videoSource = "default";
 let configurationVideocall = {};
 let doNegotication = true;
+let makingOffer = false, ignoreOffer = false;
 class CattleCall {
     constructor(user_id, clientId, clientSecret) {
         this.clientId = clientId;
@@ -276,27 +277,20 @@ function initWebRtc(userId, shareUserId, isStream, isCaller) {
     };
     console.log(rtcPeerConn.signalingState, "signal---");
     rtcPeerConn.onnegotiationneeded = async function () {
-        if (rtcPeerConn.signalingState !== "stable") {
-            console.log(rtcPeerConn.signalingState, "signal--2");
-            return;
-        }
+        makingOffer = true;
         rtcPeerConn.createOffer().then((desc) => {
-            console.log(rtcPeerConn.signalingState, "rtcPeerConn.signalingState")
-            if (rtcPeerConn.signalingState != "stable") {
-                console.log(rtcPeerConn.signalingState, "signal---3");
-                rtcPeerConn._negotiating = false;
-                return;
-            }
+            console.log(rtcPeerConn.signalingState, "rtcPeerConn.signalingState");
+            if (rtcPeerConn.signalingState != "stable") return;
             rtcPeerConn.setLocalDescription(desc).then(() => {
                 socket.emit('video_signal', { "type": "offer", 'offer': rtcPeerConn.localDescription, user_id: videoLoginUserId, 'share_user_id': videoCallUserId, room: ROOM });
-                rtcPeerConn._negotiating = false;
+                makingOffer = true;
             }).catch(error => {
                 console.log("setLocalDescription error", error);
-                rtcPeerConn._negotiating = false;
+                makingOffer = true;
             });
         }).catch(e => {
             console.log("offer error", error);
-            rtcPeerConn._negotiating = false;
+            makingOffer = true;
         });
     };
     rtcPeerConn.onopen = function () {
@@ -344,16 +338,15 @@ async function onOffer(offer) {
         console.log("creating peerconnection");
         //doNegotication = false;
     }
-    if (isCaller) {
-        console.log("caller---- ");
-        return;
+    const offerCollision = description.type == "offer" && (makingOffer || rtcPeerConn.signalingState != "stable");
+    if (offerCollision) {
+        await rtcPeerConn.setLocalDescription({ type: "rollback" });
+        console.log(rtcPeerConn.signalingState, "offer collision");
     }
     console.log(rtcPeerConn.signalingState, "rtcPeerConn.signalingState offere");
-    if (rtcPeerConn.signalingState !== "stable") {
-        await rtcPeerConn.setLocalDescription({ type: "rollback", spd: "" })
-    }
     rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(async () => {
         await addStream();
+        console.log("adding stream");
         rtcPeerConn.createAnswer().then(function (answer) {
             rtcPeerConn.setLocalDescription(answer).catch(error => {
                 console.log(error);
