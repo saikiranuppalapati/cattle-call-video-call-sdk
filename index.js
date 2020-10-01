@@ -253,6 +253,11 @@ class CattleCall {
         socket.on('error', (error) => {
             __this.onerror(error);
         });
+        socket.on('call_answered', (data) => {
+            if (typeof __this.onCallAnswered == "function") {
+                __this.onCallAnswered(data);
+            }
+        })
     }
     switchMeadiDevices(audioDevice, videoDevice) {
         if (audioDevice) {
@@ -267,7 +272,6 @@ class CattleCall {
 }
 
 function initWebRtc(userId, shareUserId, isStream, isCaller) {
-    console.log(remoteVideoSelector, "remote element")
     if (remoteVideoSelector == null) return false;
     rtcPeerConn = new RTCPeerConnection(configurationVideocall);
     rtcPeerConn.onicecandidate = function (evt) {
@@ -275,11 +279,10 @@ function initWebRtc(userId, shareUserId, isStream, isCaller) {
             socket.emit('video_signal', { "type": "candidate", "candidate": evt.candidate, "user_id": videoLoginUserId, "share_user_id": videoCallUserId, room: ROOM });
         }
     };
-    console.log(rtcPeerConn.signalingState, "signal---");
     rtcPeerConn.onnegotiationneeded = async function () {
         makingOffer = true;
-        rtcPeerConn.createOffer().then((desc) => {
-            console.log(rtcPeerConn.signalingState, "rtcPeerConn.signalingState");
+        const offerOptions = { offerToReceiveAudio: 1, offerToReceiveVideo: 1 };
+        rtcPeerConn.createOffer(offerOptions).then((desc) => {
             if (rtcPeerConn.signalingState != "stable") return;
             rtcPeerConn.setLocalDescription(desc).then(() => {
                 socket.emit('video_signal', { "type": "offer", 'offer': rtcPeerConn.localDescription, user_id: videoLoginUserId, 'share_user_id': videoCallUserId, room: ROOM });
@@ -317,7 +320,6 @@ function initWebRtc(userId, shareUserId, isStream, isCaller) {
         }
     };
     rtcPeerConn.ontrack = function (evt) {
-        console.log("remote video recived");
         remoteVideoStream = evt.streams[0];
         if (remoteVideoSelector) {
             remoteVideoSelector.srcObject = remoteVideoStream;
@@ -339,45 +341,26 @@ async function onOffer(offer) {
         //doNegotication = false;
     }
     if (rtcPeerConn.signalingState != "stable") {
-        await rtcPeerConn.setLocalDescription({ type: "rollback" });
+        await rtcPeerConn.setLocalDescription({ type: "rollback", sdp: "" });
         console.log(rtcPeerConn.signalingState, "offer collision");
     }
-    console.log(rtcPeerConn.signalingState, "rtcPeerConn.signalingState offere");
-    if (adapter.default.browserDetails.browser == "safari") {
-        offer.sdp.replace("420029", "42e01f");
-        rtcPeerConn.setRemoteDescription(offer).then(async () => {
-            rtcPeerConn.createAnswer().then(function (answer) {
-                rtcPeerConn.setLocalDescription(answer).catch(error => {
-                    console.log(error);
-                });
-                socket.emit('video_signal', { "type": "answer", answer: answer, "user_id": videoLoginUserId, "share_user_id": videoCallUserId, room: ROOM });
-            }).catch(error => {
-                console.log(error, "error while creating answer");
-            })
-        }).catch(err => {
-            console.log(err, "error seting remote description");
+    rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(async () => {
+        rtcPeerConn.createAnswer().then(function (answer) {
+            rtcPeerConn.setLocalDescription(answer).catch(error => {
+                console.log(error);
+            });
+            socket.emit('video_signal', { "type": "answer", answer: answer, "user_id": videoLoginUserId, "share_user_id": videoCallUserId, room: ROOM });
+        }).catch(error => {
+            console.log(error, "error while creating answer");
         })
-    } else {
-        rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(async () => {
-            rtcPeerConn.createAnswer().then(function (answer) {
-                rtcPeerConn.setLocalDescription(answer).catch(error => {
-                    console.log(error);
-                });
-                socket.emit('video_signal', { "type": "answer", answer: answer, "user_id": videoLoginUserId, "share_user_id": videoCallUserId, room: ROOM });
-            }).catch(error => {
-                console.log(error, "error while creating answer");
-            })
-        }).catch(err => {
-            console.log(err, "error seting remote description");
-        })
-    }
-
+    }).catch(err => {
+        console.log(err, "error seting remote description");
+    })
 }
 
 /** onAnswer method is used to set remote answer **/
 
 function onAnswer(answer) {
-    console.log("answer");
     if (!rtcPeerConn) {
         initWebRtc(videoLoginUserId, videoCallUserId, true, false);
         doNegotication = true;
@@ -394,14 +377,12 @@ function onCandidate(candidate) {
         console.log("connection not there");
         return;
     }
-    if (adapter.default.browserDetails.browser == "safari") {
-        rtcPeerConn.addIceCandidate(candidate).catch(error => {
-            console.log(error, "addIceCandidate")
-        });
-    } else {
+    if (candidate) {
         rtcPeerConn.addIceCandidate(new RTCIceCandidate(candidate)).catch(error => {
             console.log(error, "addIceCandidate")
         });
+    } else {
+        console.log(candidate, "invalid candidate");
     }
 }
 
@@ -455,7 +436,6 @@ function addStream() {
             });
         };
         stream.getTracks().forEach(track => rtcPeerConn.addTrack(track, stream));
-        //rtcPeerConn.addTrack(track,stream);
         if (localVideoSelector) {
             localVideoSelector.srcObject = localVideoStream;
         }
