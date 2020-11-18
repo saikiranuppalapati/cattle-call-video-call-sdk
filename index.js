@@ -441,6 +441,7 @@ function addStream() {
         }
         return true;
     }).catch(err => {
+        console.log(err);
         alert("Camera device is not readable");
         return false;
     });
@@ -474,6 +475,26 @@ function getServers() {
         configurationVideocall = data;
         __this.onReady();
     })
+}
+window.onbeforeunload = function (evt) {
+    if (rtcPeerConn) {
+        try {
+            rtcPeerConn.close();
+            rtcPeerConn.onicecandidate = null;
+            rtcPeerConn.ontrack = null;
+        } catch (e) {
+            console.log("close connection", e);
+        }
+    }
+    rtcPeerConn = null;
+    if (localVideoStream != null) {
+        try {
+            localVideoStream.stop();
+        } catch (e) {
+            console.log("stream Err", e);
+        }
+        localVideoStream = null;
+    }
 }
 function setCallEndTimer(time) {
     let timeint = parseInt(time) * 60000;
