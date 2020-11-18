@@ -22,8 +22,8 @@ let isCaller = false;
 let audioStatus = true;
 let videoStatus = true;
 let __this;
-let audioSource = "default";
-let videoSource = "default";
+let audioSource = "";
+let videoSource = "";
 let configurationVideocall = {};
 let doNegotication = true;
 let makingOffer = false, ignoreOffer = false;
@@ -421,10 +421,16 @@ function addStream() {
     if (localVideoStream != null) {
         localVideoStream.stop();
     }
-    const constraints = {
-        audio: audioStatus ? { deviceId: audioSource ? audioSource : "default" } : audioStatus,
-        video: videoStatus ? { deviceId: videoSource ? videoSource : "default" } : videoStatus
+    let constraints = {
+        audio: audioStatus,
+        video: videoStatus
     };
+    if (videoSource !== "") {
+        constraints.video = { deviceId: videoSource }
+    }
+    if (audioSource !== "") {
+        constraints.audio = { deviceId: audioSource }
+    }
     navigator.mediaDevices.getUserMedia(constraints).then(stream => {
         localVideoStream = stream;
         localVideoStream.stop = function () {
@@ -442,7 +448,7 @@ function addStream() {
         return true;
     }).catch(err => {
         console.log(err);
-        alert("Camera device is not readable");
+        alert(err.message);
         return false;
     });
 }
