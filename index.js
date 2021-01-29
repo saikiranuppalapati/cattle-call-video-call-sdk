@@ -1,7 +1,4 @@
 'use strict';
-const trim = require("trim");
-const fs = require("fs");
-const path = require("path");
 const socketClient = require("socket.io-client");
 const adapter = require('webrtc-adapter');
 const SOKET_SERVER_URL = "https://cattlecall.azurewebsites.net";
@@ -146,7 +143,8 @@ class CattleCall {
     async getDevices() {
         return new Promise(async (resolve, reject) => {
             await navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(function () {
+                .then(function (stream) {
+                    stream.getTracks().forEach(track => track.stop());
                     console.log("audio working");
                 }).catch(function (err) {
                     if (err.name === "NotFoundError") {
@@ -154,7 +152,8 @@ class CattleCall {
                     }
                 });
             await navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function () {
+                .then(function (stream) {
+                    stream.getTracks().forEach(track => track.stop());
                     console.log("video working");
                 }).catch(function (err) {
                     if (err.name === "NotFoundError") {
@@ -420,6 +419,9 @@ function addStream() {
     // get a local stream, show it in our video tag and add it to be sent
     if (localVideoStream != null) {
         localVideoStream.stop();
+    }
+    if (localVideoStream) {
+        localVideoStream.getTracks().forEach(track => track.stop())
     }
     let constraints = {
         audio: audioStatus,
