@@ -75,6 +75,7 @@ class CattleCall {
         });
     }
     call(callerId, localVideoElement, remoteVideoElement, audioDevice, videoDevice) {
+        console.log(callerId, localVideoElement, remoteVideoElement, audioDevice, videoDevice, "call-init");
         if (audioDevice) {
             audioSource = audioDevice;
         }
@@ -97,6 +98,7 @@ class CattleCall {
         videoCallUserId = callerId;
     }
     answerCall(data) {
+        console.log(data, "ans-call");
         localVideoSelector = document.querySelector(data.localVideoElement);
         remoteVideoSelector = document.querySelector(data.remoteVideoElement);
         let calldata = localStorage.getItem("m5wHOFdo1NJWEen4");
@@ -414,7 +416,7 @@ function stopVideoCalling(trigger) {
 
 /** addStream is used to set local stream to peer connection **/
 
-function addStream() {
+async function addStream() {
     if (remoteVideoSelector == null) return false;
     // get a local stream, show it in our video tag and add it to be sent
     if (localVideoStream != null) {
