@@ -1,7 +1,7 @@
 'use strict';
 const socketClient = require("socket.io-client");
 const adapter = require('webrtc-adapter');
-const SOKET_SERVER_URL = "https://cattlecall.azurewebsites.net";
+const SOKET_SERVER_URL = "https://apis.cattlecall.me";
 var rtcPeerConn;
 var videoLoginUserId = 0;
 var videoCallUserId = 0;
