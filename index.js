@@ -180,7 +180,6 @@ class CattleCall {
         })
     }
     listenSockets() {
-        //getServers();
         socket.on("configuration", function (data) {
             configurationVideocall = data;
             __this.onReady();
