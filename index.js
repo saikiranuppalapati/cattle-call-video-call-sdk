@@ -1,7 +1,7 @@
 'use strict';
 const socketClient = require("socket.io-client");
 const adapter = require('webrtc-adapter');
-const SOKET_SERVER_URL = "https://cattlecall.azurewebsites.net";
+const SOKET_SERVER_URL = "https://apis.cattlecall.me";
 var rtcPeerConn;
 var videoLoginUserId = 0;
 var videoCallUserId = 0;
@@ -75,7 +75,6 @@ class CattleCall {
         });
     }
     call(callerId, localVideoElement, remoteVideoElement, audioDevice, videoDevice) {
-        console.log(callerId, localVideoElement, remoteVideoElement, audioDevice, videoDevice, "call-init");
         if (audioDevice) {
             audioSource = audioDevice;
         }
@@ -98,7 +97,6 @@ class CattleCall {
         videoCallUserId = callerId;
     }
     answerCall(data) {
-        console.log(data, "ans-call");
         localVideoSelector = document.querySelector(data.localVideoElement);
         remoteVideoSelector = document.querySelector(data.remoteVideoElement);
         let calldata = localStorage.getItem("m5wHOFdo1NJWEen4");
@@ -346,8 +344,8 @@ async function onOffer(offer) {
         console.log(rtcPeerConn.signalingState, "offer collision");
     }
     rtcPeerConn.setRemoteDescription(new RTCSessionDescription(offer)).then(async () => {
-        rtcPeerConn.createAnswer().then(function (answer) {
-            rtcPeerConn.setLocalDescription(answer).catch(error => {
+        rtcPeerConn.createAnswer().then(async function (answer) {
+            await rtcPeerConn.setLocalDescription(answer).catch(error => {
                 console.log(error);
             });
             socket.emit('video_signal', { "type": "answer", answer: answer, "user_id": videoLoginUserId, "share_user_id": videoCallUserId, room: ROOM });
